@@ -26,10 +26,10 @@ import (
 )
 
 // NotFound returns new instance of not found error
-func NotFound(message string, args ...interface{}) error {
-	return WrapWithMessage(&NotFoundError{
+func NotFound(message string, args ...interface{}) Error {
+	return newTrace(&NotFoundError{
 		Message: fmt.Sprintf(message, args...),
-	}, message, args...)
+	}, 2)
 }
 
 // NotFoundError indicates that object has not been found
@@ -55,24 +55,37 @@ func (e *NotFoundError) OrigError() error {
 	return e
 }
 
-// IsNotFound returns whether this error is of NotFoundError type
-func IsNotFound(e error) bool {
-	type nf interface {
-		IsNotFoundError() bool
+// Is provides an equivalency check for NotFoundError to be used with errors.Is
+func (e *NotFoundError) Is(target error) bool {
+	if os.IsNotExist(target) {
+		return true
 	}
-	err := Unwrap(e)
-	_, ok := err.(nf)
+
+	err, ok := Unwrap(target).(*NotFoundError)
+	if !ok {
+		return false
+	}
+
+	return err.Message == e.Message
+}
+
+// IsNotFound returns whether this error is of NotFoundError type
+func IsNotFound(err error) bool {
+	err = Unwrap(err)
+	_, ok := err.(interface {
+		IsNotFoundError() bool
+	})
 	if !ok {
 		return os.IsNotExist(err)
 	}
-	return ok
+	return true
 }
 
 // AlreadyExists returns a new instance of AlreadyExists error
-func AlreadyExists(message string, args ...interface{}) error {
-	return WrapWithMessage(&AlreadyExistsError{
-		fmt.Sprintf(message, args...),
-	}, message, args...)
+func AlreadyExists(message string, args ...interface{}) Error {
+	return newTrace(&AlreadyExistsError{
+		Message: fmt.Sprintf(message, args...),
+	}, 2)
 }
 
 // AlreadyExistsError indicates that there's a duplicate object that already
@@ -82,9 +95,9 @@ type AlreadyExistsError struct {
 }
 
 // Error returns log friendly description of an error
-func (n *AlreadyExistsError) Error() string {
-	if n.Message != "" {
-		return n.Message
+func (e *AlreadyExistsError) Error() string {
+	if e.Message != "" {
+		return e.Message
 	}
 	return "object already exists"
 }
@@ -99,6 +112,16 @@ func (e *AlreadyExistsError) OrigError() error {
 	return e
 }
 
+// Is provides an equivalency check for AlreadyExistsError to be used with errors.Is
+func (e *AlreadyExistsError) Is(target error) bool {
+	err, ok := Unwrap(target).(*AlreadyExistsError)
+	if !ok {
+		return false
+	}
+
+	return err.Message == e.Message
+}
+
 // IsAlreadyExists returns whether this is error indicating that object
 // already exists
 func IsAlreadyExists(e error) bool {
@@ -110,10 +133,10 @@ func IsAlreadyExists(e error) bool {
 }
 
 // BadParameter returns a new instance of BadParameterError
-func BadParameter(message string, args ...interface{}) error {
-	return WrapWithMessage(&BadParameterError{
+func BadParameter(message string, args ...interface{}) Error {
+	return newTrace(&BadParameterError{
 		Message: fmt.Sprintf(message, args...),
-	}, message, args...)
+	}, 2)
 }
 
 // BadParameterError indicates that something is wrong with passed
@@ -137,6 +160,16 @@ func (b *BadParameterError) IsBadParameterError() bool {
 	return true
 }
 
+// Is provides an equivalency check for BadParameterError to be used with errors.Is
+func (b *BadParameterError) Is(target error) bool {
+	err, ok := Unwrap(target).(*BadParameterError)
+	if !ok {
+		return false
+	}
+
+	return err.Message == b.Message
+}
+
 // IsBadParameter returns whether this error is of BadParameterType
 func IsBadParameter(e error) bool {
 	type bp interface {
@@ -147,10 +180,10 @@ func IsBadParameter(e error) bool {
 }
 
 // NotImplemented returns a new instance of NotImplementedError
-func NotImplemented(message string, args ...interface{}) error {
-	return WrapWithMessage(&NotImplementedError{
+func NotImplemented(message string, args ...interface{}) Error {
+	return newTrace(&NotImplementedError{
 		Message: fmt.Sprintf(message, args...),
-	}, message, args...)
+	}, 2)
 }
 
 // NotImplementedError defines an error condition to describe the result
@@ -174,6 +207,16 @@ func (e *NotImplementedError) IsNotImplementedError() bool {
 	return true
 }
 
+// Is provides an equivalency check for NotImplementedError to be used with errors.Is
+func (e *NotImplementedError) Is(target error) bool {
+	err, ok := Unwrap(target).(*NotImplementedError)
+	if !ok {
+		return false
+	}
+
+	return err.Message == e.Message
+}
+
 // IsNotImplemented returns whether this error is of NotImplementedError type
 func IsNotImplemented(e error) bool {
 	type ni interface {
@@ -184,8 +227,10 @@ func IsNotImplemented(e error) bool {
 }
 
 // CompareFailed returns new instance of CompareFailedError
-func CompareFailed(message string, args ...interface{}) error {
-	return WrapWithMessage(&CompareFailedError{Message: fmt.Sprintf(message, args...)}, message, args...)
+func CompareFailed(message string, args ...interface{}) Error {
+	return newTrace(&CompareFailedError{
+		Message: fmt.Sprintf(message, args...),
+	}, 2)
 }
 
 // CompareFailedError indicates a failed comparison (e.g. bad password or hash)
@@ -212,6 +257,16 @@ func (e *CompareFailedError) IsCompareFailedError() bool {
 	return true
 }
 
+// Is provides an equivalency check for CompareFailedError to be used with errors.Is
+func (e *CompareFailedError) Is(target error) bool {
+	err, ok := Unwrap(target).(*CompareFailedError)
+	if !ok {
+		return false
+	}
+
+	return err.Message == e.Message
+}
+
 // IsCompareFailed detects if this error is of CompareFailed type
 func IsCompareFailed(e error) bool {
 	type cf interface {
@@ -222,10 +277,10 @@ func IsCompareFailed(e error) bool {
 }
 
 // AccessDenied returns new instance of AccessDeniedError
-func AccessDenied(message string, args ...interface{}) error {
-	return WrapWithMessage(&AccessDeniedError{
+func AccessDenied(message string, args ...interface{}) Error {
+	return newTrace(&AccessDeniedError{
 		Message: fmt.Sprintf(message, args...),
-	}, message, args...)
+	}, 2)
 }
 
 // AccessDeniedError indicates denied access
@@ -251,12 +306,21 @@ func (e *AccessDeniedError) OrigError() error {
 	return e
 }
 
-// IsAccessDenied detects if this error is of AccessDeniedError type
-func IsAccessDenied(e error) bool {
-	type ad interface {
-		IsAccessDeniedError() bool
+// Is provides an equivalency check for AccessDeniedError to be used with errors.Is
+func (e *AccessDeniedError) Is(target error) bool {
+	err, ok := Unwrap(target).(*AccessDeniedError)
+	if !ok {
+		return false
 	}
-	_, ok := Unwrap(e).(ad)
+
+	return err.Message == e.Message
+}
+
+// IsAccessDenied detects if this error is of AccessDeniedError type
+func IsAccessDenied(err error) bool {
+	_, ok := Unwrap(err).(interface {
+		IsAccessDeniedError() bool
+	})
 	return ok
 }
 
@@ -266,41 +330,47 @@ func ConvertSystemError(err error) error {
 	innerError := Unwrap(err)
 
 	if os.IsExist(innerError) {
-		return WrapWithMessage(&AlreadyExistsError{Message: innerError.Error()}, innerError.Error())
+		return newTrace(&AlreadyExistsError{
+			Message: innerError.Error(),
+		}, 2)
 	}
 	if os.IsNotExist(innerError) {
-		return WrapWithMessage(&NotFoundError{Message: innerError.Error()}, innerError.Error())
+		return newTrace(&NotFoundError{
+			Message: innerError.Error(),
+		}, 2)
 	}
 	if os.IsPermission(innerError) {
-		return WrapWithMessage(&AccessDeniedError{Message: innerError.Error()}, innerError.Error())
+		return newTrace(&AccessDeniedError{
+			Message: innerError.Error(),
+		}, 2)
 	}
 	switch realErr := innerError.(type) {
 	case *net.OpError:
-		return WrapWithMessage(&ConnectionProblemError{
-			Message: realErr.Error(),
-			Err:     realErr}, realErr.Error())
+		return newTrace(&ConnectionProblemError{
+			Err: realErr,
+		}, 2)
 	case *os.PathError:
 		message := fmt.Sprintf("failed to execute command %v error:  %v", realErr.Path, realErr.Err)
-		return WrapWithMessage(&AccessDeniedError{
+		return newTrace(&AccessDeniedError{
 			Message: message,
-		}, message)
+		}, 2)
 	case x509.SystemRootsError, x509.UnknownAuthorityError:
-		return wrapWithDepth(&TrustError{Err: innerError}, 2)
+		return newTrace(&TrustError{Err: innerError}, 2)
 	}
 	if _, ok := innerError.(net.Error); ok {
-		return WrapWithMessage(&ConnectionProblemError{
-			Message: innerError.Error(),
-			Err:     innerError}, innerError.Error())
+		return newTrace(&ConnectionProblemError{
+			Err: innerError,
+		}, 2)
 	}
 	return err
 }
 
 // ConnectionProblem returns new instance of ConnectionProblemError
-func ConnectionProblem(err error, message string, args ...interface{}) error {
-	return WrapWithMessage(&ConnectionProblemError{
+func ConnectionProblem(err error, message string, args ...interface{}) Error {
+	return newTrace(&ConnectionProblemError{
 		Message: fmt.Sprintf(message, args...),
 		Err:     err,
-	}, message, args...)
+	}, 2)
 }
 
 // ConnectionProblemError indicates a network related problem
@@ -311,10 +381,10 @@ type ConnectionProblemError struct {
 
 // Error is debug - friendly error message
 func (c *ConnectionProblemError) Error() string {
-	if c.Err == nil {
+	if c.Message != "" {
 		return c.Message
 	}
-	return c.Err.Error()
+	return UserMessage(c.Err)
 }
 
 // IsConnectionProblemError indicates that this error is of ConnectionProblemError type
@@ -322,9 +392,27 @@ func (c *ConnectionProblemError) IsConnectionProblemError() bool {
 	return true
 }
 
-// OrigError returns original error (in this case this is the error itself)
+// Unwrap returns the wrapped error if any
+func (c *ConnectionProblemError) Unwrap() error {
+	return c.Err
+}
+
+// OrigError returns original error
 func (c *ConnectionProblemError) OrigError() error {
+	if c.Err != nil {
+		return c.Err
+	}
 	return c
+}
+
+// Is provides an equivalency check for ConnectionProblemError to be used with errors.Is
+func (c *ConnectionProblemError) Is(target error) bool {
+	err, ok := Unwrap(target).(*ConnectionProblemError)
+	if !ok {
+		return false
+	}
+
+	return err.Message == c.Message && err.Err == c.Err
 }
 
 // IsConnectionProblem returns whether this error is of ConnectionProblemError
@@ -337,10 +425,10 @@ func IsConnectionProblem(e error) bool {
 }
 
 // LimitExceeded returns whether new instance of LimitExceededError
-func LimitExceeded(message string, args ...interface{}) error {
-	return WrapWithMessage(&LimitExceededError{
+func LimitExceeded(message string, args ...interface{}) Error {
+	return newTrace(&LimitExceededError{
 		Message: fmt.Sprintf(message, args...),
-	}, message, args...)
+	}, 2)
 }
 
 // LimitExceededError indicates rate limit or connection limit problem
@@ -349,18 +437,28 @@ type LimitExceededError struct {
 }
 
 // Error is debug - friendly error message
-func (c *LimitExceededError) Error() string {
-	return c.Message
+func (e *LimitExceededError) Error() string {
+	return e.Message
 }
 
 // IsLimitExceededError indicates that this error is of ConnectionProblem
-func (c *LimitExceededError) IsLimitExceededError() bool {
+func (e *LimitExceededError) IsLimitExceededError() bool {
 	return true
 }
 
 // OrigError returns original error (in this case this is the error itself)
-func (c *LimitExceededError) OrigError() error {
-	return c
+func (e *LimitExceededError) OrigError() error {
+	return e
+}
+
+// Is provides an equivalency check for LimitExceededError to be used with errors.Is
+func (e *LimitExceededError) Is(target error) bool {
+	err, ok := Unwrap(target).(*LimitExceededError)
+	if !ok {
+		return false
+	}
+
+	return err.Message == e.Message
 }
 
 // IsLimitExceeded detects if this error is of LimitExceededError
@@ -372,6 +470,14 @@ func IsLimitExceeded(e error) bool {
 	return ok
 }
 
+// Trust returns new instance of TrustError
+func Trust(err error, message string, args ...interface{}) Error {
+	return newTrace(&TrustError{
+		Message: fmt.Sprintf(message, args...),
+		Err:     err,
+	}, 2)
+}
+
 // TrustError indicates trust-related validation error (e.g. untrusted cert)
 type TrustError struct {
 	// Err is original error
@@ -381,7 +487,10 @@ type TrustError struct {
 
 // Error returns log-friendly error description
 func (t *TrustError) Error() string {
-	return t.Err.Error()
+	if t.Message != "" {
+		return t.Message
+	}
+	return UserMessage(t.Err)
 }
 
 // IsTrustError indicates that this error is of TrustError type
@@ -389,9 +498,27 @@ func (*TrustError) IsTrustError() bool {
 	return true
 }
 
+// Unwrap returns the wrapped error if any
+func (t *TrustError) Unwrap() error {
+	return t.Err
+}
+
 // OrigError returns original error (in this case this is the error itself)
 func (t *TrustError) OrigError() error {
+	if t.Err != nil {
+		return t.Err
+	}
 	return t
+}
+
+// Is provides an equivalency check for TrustError to be used with errors.Is
+func (t *TrustError) Is(target error) bool {
+	err, ok := Unwrap(target).(*TrustError)
+	if !ok {
+		return false
+	}
+
+	return err.Message == t.Message && err.Err == t.Err
 }
 
 // IsTrustError returns if this is a trust error
@@ -405,11 +532,11 @@ func IsTrustError(e error) bool {
 
 // OAuth2 returns new instance of OAuth2Error
 func OAuth2(code, message string, query url.Values) Error {
-	return WrapWithMessage(&OAuth2Error{
+	return newTrace(&OAuth2Error{
 		Code:    code,
 		Message: message,
 		Query:   query,
-	}, message)
+	}, 2)
 }
 
 // OAuth2Error defined an error used in OpenID Connect Flow (OIDC)
@@ -429,6 +556,36 @@ func (o *OAuth2Error) IsOAuth2Error() bool {
 	return true
 }
 
+// Is provides an equivalency check for OAuth2Error to be used with errors.Is
+func (o *OAuth2Error) Is(target error) bool {
+	err, ok := Unwrap(target).(*OAuth2Error)
+	if !ok {
+		return false
+	}
+
+	if err.Message != o.Message ||
+		err.Code != o.Code ||
+		len(err.Query) != len(o.Query) {
+		return false
+	}
+
+	for k, v := range err.Query {
+		for k2, v2 := range o.Query {
+			if k != k2 && len(v) != len(v2) {
+				return false
+			}
+
+			for i := range v {
+				if v[i] != v2[i] {
+					return false
+				}
+			}
+		}
+	}
+
+	return true
+}
+
 // IsOAuth2 returns if this is a OAuth2-related error
 func IsOAuth2(e error) bool {
 	type oe interface {
@@ -443,12 +600,12 @@ func IsEOF(e error) bool {
 	return Unwrap(e) == io.EOF
 }
 
-// Retry return new instance of RetryError which indicates a transient error type
-func Retry(err error, message string, args ...interface{}) error {
-	return WrapWithMessage(&RetryError{
+// Retry returns new instance of RetryError which indicates a transient error type
+func Retry(err error, message string, args ...interface{}) Error {
+	return newTrace(&RetryError{
 		Message: fmt.Sprintf(message, args...),
 		Err:     err,
-	}, message, args...)
+	}, 2)
 }
 
 // RetryError indicates a transient error type
@@ -459,10 +616,10 @@ type RetryError struct {
 
 // Error is debug-friendly error message
 func (c *RetryError) Error() string {
-	if c.Err == nil {
+	if c.Message != "" {
 		return c.Message
 	}
-	return c.Err.Error()
+	return UserMessage(c.Err)
 }
 
 // IsRetryError indicates that this error is of RetryError type
@@ -470,9 +627,27 @@ func (c *RetryError) IsRetryError() bool {
 	return true
 }
 
+// Unwrap returns the wrapped error if any
+func (c *RetryError) Unwrap() error {
+	return c.Err
+}
+
 // OrigError returns original error (in this case this is the error itself)
 func (c *RetryError) OrigError() error {
+	if c.Err != nil {
+		return c.Err
+	}
 	return c
+}
+
+// Is provides an equivalency check for RetryError to be used with errors.Is
+func (c *RetryError) Is(target error) bool {
+	err, ok := Unwrap(target).(*RetryError)
+	if !ok {
+		return false
+	}
+
+	return err.Message == c.Message && err.Err == c.Err
 }
 
 // IsRetryError returns whether this error is of ConnectionProblemError

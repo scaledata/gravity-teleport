@@ -19,18 +19,17 @@ package remotecommand
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 
-	"github.com/golang/glog"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/httpstream"
+	"k8s.io/klog/v2"
 )
 
 // streamProtocolV1 implements the first version of the streaming exec & attach
 // protocol. This version has some bugs, such as not being able to detect when
-// non-interactive stdin data has ended. See http://issues.k8s.io/13394 and
-// http://issues.k8s.io/13395 for more details.
+// non-interactive stdin data has ended. See https://issues.k8s.io/13394 and
+// https://issues.k8s.io/13395 for more details.
 type streamProtocolV1 struct {
 	StreamOptions
 
@@ -53,10 +52,10 @@ func (p *streamProtocolV1) stream(conn streamCreator) error {
 	errorChan := make(chan error)
 
 	cp := func(s string, dst io.Writer, src io.Reader) {
-		glog.V(6).Infof("Copying %s", s)
-		defer glog.V(6).Infof("Done copying %s", s)
+		klog.V(6).Infof("Copying %s", s)
+		defer klog.V(6).Infof("Done copying %s", s)
 		if _, err := io.Copy(dst, src); err != nil && err != io.EOF {
-			glog.Errorf("Error copying %s: %v", s, err)
+			klog.Errorf("Error copying %s: %v", s, err)
 		}
 		if s == v1.StreamTypeStdout || s == v1.StreamTypeStderr {
 			doneChan <- struct{}{}
@@ -111,7 +110,7 @@ func (p *streamProtocolV1) stream(conn streamCreator) error {
 
 	// always read from errorStream
 	go func() {
-		message, err := ioutil.ReadAll(p.errorStream)
+		message, err := io.ReadAll(p.errorStream)
 		if err != nil && err != io.EOF {
 			errorChan <- fmt.Errorf("Error reading from error stream: %s", err)
 			return
@@ -127,7 +126,7 @@ func (p *streamProtocolV1) stream(conn streamCreator) error {
 		// because stdin is not closed until the process exits. If we try to call
 		// stdin.Close(), it returns no error but doesn't unblock the copy. It will
 		// exit when the process exits, instead.
-		go cp(v1.StreamTypeStdin, p.remoteStdin, p.Stdin)
+		go cp(v1.StreamTypeStdin, p.remoteStdin, readerWrapper{p.Stdin})
 	}
 
 	waitCount := 0
