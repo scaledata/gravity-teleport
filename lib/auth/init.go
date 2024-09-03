@@ -289,6 +289,7 @@ func Init(cfg InitConfig, opts ...AuthServerOption) (*AuthServer, error) {
 			Metadata: services.Metadata{
 				Name:      cfg.ClusterName.GetClusterName(),
 				Namespace: defaults.Namespace,
+				Labels:    map[string]string{},
 			},
 			Spec: services.CertAuthoritySpecV2{
 				ClusterName:  cfg.ClusterName.GetClusterName(),
@@ -343,6 +344,7 @@ func Init(cfg InitConfig, opts ...AuthServerOption) (*AuthServer, error) {
 			Metadata: services.Metadata{
 				Name:      cfg.ClusterName.GetClusterName(),
 				Namespace: defaults.Namespace,
+				Labels:    map[string]string{},
 			},
 			Spec: services.CertAuthoritySpecV2{
 				ClusterName:  cfg.ClusterName.GetClusterName(),
