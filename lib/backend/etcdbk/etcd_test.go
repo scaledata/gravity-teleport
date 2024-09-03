@@ -25,8 +25,8 @@ import (
 	"github.com/gravitational/teleport/lib/backend/test"
 	"github.com/gravitational/teleport/lib/utils"
 
-	"github.com/coreos/etcd/clientv3"
 	"github.com/gravitational/trace"
+	clientv3 "go.etcd.io/etcd/client/v3"
 	"golang.org/x/net/context"
 	. "gopkg.in/check.v1"
 )

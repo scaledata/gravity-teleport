@@ -289,7 +289,7 @@ const MetadataSchema = `{
     "description": {"type": "string"},
     "expires": {"type": "string"},
     "labels": {
-      "type": "object",
+      "type": ["object", "null"],
       "additionalProperties": false,
       "patternProperties": {
          "^[a-zA-Z/.0-9_*-]+$":  { "type": "string" }

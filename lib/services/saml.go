@@ -540,7 +540,7 @@ func (o *SAMLConnectorV2) GetServiceProvider(clock clockwork.Clock) (*saml2.SAML
 		}
 
 		for _, kd := range metadata.IDPSSODescriptor.KeyDescriptors {
-			certData, err := base64.StdEncoding.DecodeString(kd.KeyInfo.X509Data.X509Certificate.Data)
+			certData, err := base64.StdEncoding.DecodeString(kd.KeyInfo.X509Data.X509Certificates[0].Data)
 			if err != nil {
 				return nil, trace.Wrap(err)
 			}
@@ -551,7 +551,7 @@ func (o *SAMLConnectorV2) GetServiceProvider(clock clockwork.Clock) (*saml2.SAML
 			certStore.Roots = append(certStore.Roots, cert)
 		}
 		o.Spec.Issuer = metadata.EntityID
-		o.Spec.SSO = metadata.IDPSSODescriptor.SingleSignOnService.Location
+		o.Spec.SSO = metadata.IDPSSODescriptor.SingleSignOnServices[0].Location
 	}
 	if o.Spec.Issuer == "" {
 		return nil, trace.BadParameter("no issuer or entityID set, either set issuer as a parameter or via entity_descriptor spec")

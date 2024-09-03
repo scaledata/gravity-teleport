@@ -265,6 +265,7 @@ func NewCertAuthority(caType CertAuthType, clusterName string, signingKeys, chec
 		Metadata: Metadata{
 			Name:      clusterName,
 			Namespace: defaults.Namespace,
+			Labels:    map[string]string{},
 		},
 		Spec: CertAuthoritySpecV2{
 			Roles:        roles,
@@ -901,6 +902,7 @@ func (c *CertAuthorityV1) V2() *CertAuthorityV2 {
 		Metadata: Metadata{
 			Name:      c.DomainName,
 			Namespace: defaults.Namespace,
+			Labels:    map[string]string{},
 		},
 		Spec: CertAuthoritySpecV2{
 			Type:         c.Type,
