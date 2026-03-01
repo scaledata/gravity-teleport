@@ -210,13 +210,14 @@ func CertPoolFromCertAuthorities(cas []CertAuthority) (*x509.CertPool, error) {
 			continue
 		}
 		for _, keyPair := range keyPairs {
-			cert, err := tlsca.ParseCertificatePEM(keyPair.Cert)
+			certs, err := tlsca.ParseCertificateChainPEM(keyPair.Cert)
 			if err != nil {
 				return nil, trace.Wrap(err)
 			}
-			certPool.AddCert(cert)
+			for _, cert := range certs {
+				certPool.AddCert(cert)
+			}
 		}
-		return certPool, nil
 	}
 	return certPool, nil
 }
@@ -230,11 +231,13 @@ func CertPool(ca CertAuthority) (*x509.CertPool, error) {
 	}
 	certPool := x509.NewCertPool()
 	for _, keyPair := range keyPairs {
-		cert, err := tlsca.ParseCertificatePEM(keyPair.Cert)
+		certs, err := tlsca.ParseCertificateChainPEM(keyPair.Cert)
 		if err != nil {
 			return nil, trace.Wrap(err)
 		}
-		certPool.AddCert(cert)
+		for _, cert := range certs {
+			certPool.AddCert(cert)
+		}
 	}
 	return certPool, nil
 }

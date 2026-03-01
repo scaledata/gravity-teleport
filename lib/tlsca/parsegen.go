@@ -124,6 +124,37 @@ func ParseCertificatePEM(bytes []byte) (*x509.Certificate, error) {
 	return cert, nil
 }
 
+// ParseCertificateChainPEM parses ALL certificates from PEM-encoded data.
+// Unlike ParseCertificatePEM which only returns the first certificate,
+// this function returns all certificates in the PEM data, which is needed
+// for certificate chains (e.g. intermediate CA + root CA).
+func ParseCertificateChainPEM(pemData []byte) ([]*x509.Certificate, error) {
+	if len(pemData) == 0 {
+		return nil, trace.BadParameter("missing PEM encoded block")
+	}
+	var certs []*x509.Certificate
+	rest := pemData
+	for {
+		var block *pem.Block
+		block, rest = pem.Decode(rest)
+		if block == nil {
+			break
+		}
+		if block.Type != "CERTIFICATE" {
+			continue
+		}
+		cert, err := x509.ParseCertificate(block.Bytes)
+		if err != nil {
+			return nil, trace.Wrap(err, "failed to parse certificate in chain")
+		}
+		certs = append(certs, cert)
+	}
+	if len(certs) == 0 {
+		return nil, trace.BadParameter("no certificates found in PEM data")
+	}
+	return certs, nil
+}
+
 // ParsePrivateKeyPEM parses PEM-encoded private key
 func ParsePrivateKeyPEM(bytes []byte) (crypto.Signer, error) {
 	block, _ := pem.Decode(bytes)
