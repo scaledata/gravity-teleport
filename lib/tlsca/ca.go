@@ -44,10 +44,12 @@ var log = logrus.WithFields(logrus.Fields{
 func New(certPEM, keyPEM []byte) (*CertAuthority, error) {
 	ca := &CertAuthority{}
 	var err error
-	ca.Cert, err = ParseCertificatePEM(certPEM)
+	certs, err := ParseCertificateChainPEM(certPEM)
 	if err != nil {
 		return nil, trace.Wrap(err)
 	}
+	ca.Cert = certs[0]
+	ca.CertChain = certs
 	if len(keyPEM) != 0 {
 		ca.Signer, err = ParsePrivateKeyPEM(keyPEM)
 		if err != nil {
@@ -59,10 +61,13 @@ func New(certPEM, keyPEM []byte) (*CertAuthority, error) {
 
 // CertAuthority is X.509 certificate authority
 type CertAuthority struct {
-	// Cert is a CA certificate
+	// Cert is a CA certificate (first in chain, used for signing)
 	Cert *x509.Certificate
 	// Signer is a private key based signer
 	Signer crypto.Signer
+	// CertChain is the full certificate chain (intermediate + parent CAs)
+	// used for populating verification pools
+	CertChain []*x509.Certificate
 }
 
 // Identity is an identity of the user or service, e.g. Proxy or Node
